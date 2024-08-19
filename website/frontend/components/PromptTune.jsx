@@ -1,101 +1,76 @@
 "use client";
-import { useState } from "react"
-import Header from "@/components/Header"
-import PromptLibrary from './PromptLibrary'
-import AttachedFiles from './AttachedFiles'
-import Compare from './Compare'
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import PromptLibrary from './PromptLibrary';
+import AttachedFiles from './AttachedFiles';
+import Compare from './Compare';
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 import {
-  PinIcon,
   ShareIcon,
   ClockIcon,
-  XIcon,
   WandIcon,
   SendIcon,
-  FolderTree,
-  Plus,
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast"
-import { ToastAction } from "@/components/ui/toast"
-import { sendMessage, generateUnitTests, scanCode } from './kaizenApi';
+import { useToast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { sendMessage} from './kaizenApi';
 
 const PromptTune = () => {
   const { toast } = useToast();
-  const [chatBoxes, setChatBoxes] = useState([{ id: 1 }]);
+  const [chatBoxes, setChatBoxes] = useState([{ id: 1, messages: [], model: 'gpt3' }]);
   const [inputMessage, setInputMessage] = useState('');
-
-  const addChatBox = () => {
-    if (chatBoxes.length >= 4) {
-      toast({
-        title: "Limit Reached",
-        description: "You can only have up to 4 chat boxes.",
-        action: (
-          <ToastAction
-            altText="Dismiss"
-            onClick={() => console.log("Toast dismissed")}
-          >
-            Dismiss
-          </ToastAction>
-        ),
-      });
-      return;
-    }
-    const newId = chatBoxes.length + 1;
-    setChatBoxes([...chatBoxes, { id: newId }]);
-  };
-
-  const removeChatBox = (id) => {
-    setChatBoxes(chatBoxes.filter((box) => box.id !== id));
-  };
+  const [showWarning, setShowWarning] = useState(false);
+  const [selectedModelId, setSelectedModelId] = useState(null);
+  const [newModel, setNewModel] = useState('');
 
   const handleModelChange = (id, model) => {
-    setChatBoxes(chatBoxes.map(box => box.id === id ? { ...box, model } : box));
+    setSelectedModelId(id);
+    setNewModel(model);
+    setShowWarning(true);
+  };
+
+  const confirmModelChange = () => {
+    setChatBoxes(chatBoxes.map(box =>
+      box.id === selectedModelId ? { ...box, model: newModel, messages: [] } : box
+    ));
+    setShowWarning(false);
+    setSelectedModelId(null);
+    setNewModel('');
+  };
+
+  const cancelModelChange = () => {
+    setShowWarning(false);
+    setSelectedModelId(null);
+    setNewModel('');
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
-  
+    if (!inputMessage.trim()) {return};
+
     try {
-      // Perform code scan
-      const scanResult = await scanCode(inputMessage);
-      
-      // Generate unit tests
-      const unitTestResult = await generateUnitTests(inputMessage, 'python');
-  
-      // Prepare messages
-      const scanMessage = {
-        role: 'assistant',
-        content: `Code Scan Results:\n${JSON.stringify(scanResult.scan_results, null, 2)}`
-      };
-      const unitTestMessage = {
-        role: 'assistant',
-        content: `Generated Unit Tests:\n${JSON.stringify(unitTestResult.unit_tests, null, 2)}`
-      };
-  
       const updatedChatBoxes = chatBoxes.map(box => {
         const userMessage = { role: 'user', content: inputMessage };
         return {
           ...box,
-          messages: [...box.messages, userMessage, scanMessage, unitTestMessage]
+          messages: [...box.messages, userMessage]
         };
       });
-  
+
       setChatBoxes(updatedChatBoxes);
       setInputMessage('');
-  
+
       toast({
         title: "Analysis Complete",
         description: "Code scan and unit tests have been generated.",
@@ -153,65 +128,23 @@ const PromptTune = () => {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="text-white bg-blue-500 hover:bg-blue-600"
-                  onClick={() => removeChatBox(id)}
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Close instance</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       </div>
-      <div className="h-64 bg-muted overflow-y-auto p-2">
-        {messages.map((msg, index) => (
-          <div key={index} className={`mb-2 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-            <span className={`inline-block p-2 rounded ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
-              {msg.content}
-            </span>
-          </div>
-        ))}
-      </div>
+      {/* Message rendering can be added back if needed */}
     </div>
   );
 
   return (
     <div>
-      <Header title="PromptTune" />
-      <div className="container mx-auto p-4 mt-4"> 
+      <div className="container mx-auto p-4 mt-4">
         <div className="grid grid-cols-1 gap-4">
           {chatBoxes.map(renderChatBox)}
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 bg-background p-4">
           <div className="flex items-center space-x-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="text-white bg-blue-500 hover:bg-blue-600"
-                    onClick={addChatBox}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Add a new LLM chat box</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
             <PromptLibrary />
-
-            <AttachedFiles/>
-
+            <AttachedFiles />
             <input
               type="text"
               className="flex-grow border rounded-lg px-4 py-2 text-black"
@@ -220,13 +153,11 @@ const PromptTune = () => {
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
             />
-
             <Compare/>
-
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <Button className="text-white bg-blue-500 hover:bg-blue-600"  onClick={handleSendMessage}>
+                  <Button className="text-white bg-blue-500 hover:bg-blue-600" onClick={handleSendMessage}>
                     <SendIcon className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -236,7 +167,19 @@ const PromptTune = () => {
           </div>
         </div>
 
-        
+        {/* Warning Overlay */}
+        {showWarning && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+            <div className="bg-blue-900 p-6 rounded-lg shadow-lg">
+              <h2 className="text-lg text-red font-bold">Warning</h2>
+              <p>Changing the model will reset the chat. All previous context will be lost. Would you like to continue?</p>
+              <div className="flex justify-end mt-4">
+                <Button variant="outline" onClick={cancelModelChange} className="mr-2">No</Button>
+                <Button onClick={confirmModelChange}>Yes</Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

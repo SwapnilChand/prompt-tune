@@ -1,5 +1,3 @@
-# setup.py
-
 from setuptools import setup, find_packages
 from prompt_tune import __version__
 

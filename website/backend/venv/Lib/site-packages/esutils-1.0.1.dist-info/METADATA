@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: esutils
+Version: 1.0.1
+Summary: utility box for ECMAScript language tools. Partial translation of esutils
+Project-URL: Homepage, https://github.com/0o120/esutils-python
+Author-email: 0x78 <contact@0x78.com>
+License-File: LICENSE
+Keywords: ecmascript,escodegen,estools,esutils,javascript
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Topic :: Software Development :: Compilers
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing :: General
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+
+# esutils
+
+esutils (esutils) is utility box for ECMAScript language tools.
+
+
+*Partial translation of esutils from the [acornjs/acorn](https://github.com/estools/esutils) repository.*

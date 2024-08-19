@@ -1,0 +1,58 @@
+Metadata-Version: 2.1
+Name: escodegen
+Version: 1.0.11
+Summary: ECMAScript code generator
+Project-URL: Homepage, https://github.com/0o120/escodegen-python
+Author-email: 0x78 <contact@0x78.com>
+License-File: LICENSE
+Keywords: ast,ecmascript,escodegen,generate,generator,javascript
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Topic :: Software Development :: Code Generators
+Classifier: Topic :: Software Development :: Compilers
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing :: General
+Requires-Python: >=3.6
+Requires-Dist: esutils
+Description-Content-Type: text/markdown
+
+**Escodegen** ([escodegen](http://github.com/estools/escodegen)) is an
+[ECMAScript](http://www.ecma-international.org/publications/standards/Ecma-262.htm)
+(also popularly known as [JavaScript](http://en.wikipedia.org/wiki/JavaScript))
+code generator from [Mozilla's Parser API](https://developer.mozilla.org/en/SpiderMonkey/Parser_API)
+AST. See the [online generator](https://estools.github.io/escodegen/demo/index.html)
+for a demo. This repository contains the Python translation of Escodegen.
+
+
+## Install
+
+    pip install escodegen
+
+## Usage
+
+### Example:
+```python
+import escodegen
+
+escodegen.generate({
+    'type': 'BinaryExpression',
+    'operator': '+',
+    'left': { 'type': 'Literal', 'value': 20 },
+    'right': { 'type': 'Literal', 'value': 2 }
+})
+```
+*produces the string: `'20 + 2'`*
+
+### Example:
+```python
+import escodegen
+import esprima
+
+escodegen.generate(esprima.parse('let a=10;let b=20'))
+```
+*produces the string: `'let a = 10;\nlet b = 20;'`*
+
+See the [API page](https://github.com/estools/escodegen/wiki/API) for
+options.

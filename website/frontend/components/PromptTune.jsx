@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from 'next/dynamic';
 
 // Dynamically import components that might cause hydration issues
@@ -56,22 +56,24 @@ const ThinkingAnimation = () => (
 
 const PromptTune = () => {
   const { toast } = useToast();
-  const [chatBoxes, setChatBoxes] = useState([{ id: 1, messages: [], model: '' }]); // Initial model value set to empty string
+  const [chatBoxes, setChatBoxes] = useState([{ id: 1, messages: [], model: '' }]);
   const [inputMessage, setInputMessage] = useState('');
   const [showWarning, setShowWarning] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState(null);
   const [newModel, setNewModel] = useState('');
   const [isClient, setIsClient] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [messageSent, setMessageSent] = useState(false);
+  const chatBoxRef = useRef(null); 
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   const handleModelChange = (id, model) => {
+    setShowWarning(true);
     setSelectedModelId(id);
     setNewModel(model);
-    setShowWarning(true);
   };
 
   const confirmModelChange = () => {
@@ -90,25 +92,11 @@ const PromptTune = () => {
   };
 
   const handleSendMessage = async () => {
-     if (!inputMessage.trim()) {return}
-    //     toast({
-    //         title: "Warning",
-    //         description: "Please type a message before sending.",
-    //         variant: "destructive",
-    //     });
-    //     return; // Prevent sending if the message is emptyty
-    // }
+    if (!inputMessage.trim()) return; // Ensure there's a message to send
+    setInputMessage(''); // Clear the input message immediately
+    setMessageSent(true); // Set messageSent to true when a message is sent
+    setIsThinking(true); // Set isThinking to true to show the animation
 
-    // if (!selectedModelId) { // Check if LLM is selected
-    //     toast({
-    //         title: "Warning",
-    //         description: "LLM not selected. Please select an LLM before sending.",
-    //         variant: "destructive",
-    //     });
-    //     return; // Prevent sending if no LLM is selecteded
-    // }
-
-    // setIsThinking(true);
     const updatedChatBoxes = await Promise.all(chatBoxes.map(async (box) => {
       const userMessage = { role: 'user', content: inputMessage };
       const updatedMessages = [...box.messages, userMessage];
@@ -140,8 +128,12 @@ const PromptTune = () => {
     }));
 
     setChatBoxes(updatedChatBoxes);
-    setInputMessage('');
-    setIsThinking(false);
+    setIsThinking(false); // Set isThinking to false after processing
+
+    // Scroll to the bottom of the chatbox
+    if (chatBoxRef.current) {
+      chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+    }
   };
 
 
@@ -191,12 +183,12 @@ const PromptTune = () => {
           </TooltipProvider>
         </div>
       </div>
-      <div className="space-y-4 mr-2">
+      <div className="space-y-2 mr-2">
         {messages.map((message, index) => (
             <div key={index} className={`p-3 rounded-lg max-w-[70%] ${
               message.role === 'user'
-                ? 'bg-gray-200 text-gray-800 rounded-br-none ml-auto' 
-                : 'bg-indigo-500 text-white rounded-bl-none mr-auto' 
+                ? 'bg-gray-200 text-gray-800 rounded-br-none ml-auto'
+                : 'bg-indigo-500 text-white rounded-bl-none mr-auto'
             }`}>
               <p>{message.content}</p>
             </div>
@@ -217,7 +209,7 @@ const PromptTune = () => {
   return (
     <>
       <div>
-        <div className="container mx-auto p-4 mt-4">
+        <div className="container mx-auto p-4 mt-4" ref={chatBoxRef}>
           <div className="grid grid-cols-1 gap-4">
             {chatBoxes.map(renderChatBox)}
           </div>
@@ -242,7 +234,9 @@ const PromptTune = () => {
                       <SendIcon className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Send prompt to all instances</TooltipContent>
+                  <TooltipContent>
+                    <p>Send</p>
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>

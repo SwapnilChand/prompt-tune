@@ -1,0 +1,207 @@
+Metadata-Version: 2.1
+Name: kaizen-cloudcode
+Version: 0.4.4
+Summary: An intelligent coding companion that accelerates your development workflow by providing efficient assistance, enabling you to craft high-quality code more rapidly.
+License: Apache2.0
+Author: Saurav Panda
+Author-email: saurav.panda@cloudcode.ai
+Requires-Python: >=3.9.0,<4.0.0
+Classifier: License :: Other/Proprietary License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Provides-Extra: all
+Provides-Extra: javascript
+Provides-Extra: python
+Provides-Extra: rust
+Provides-Extra: typescript
+Requires-Dist: black (>=24.3.0,<25.0.0)
+Requires-Dist: bs4 (>=0.0.2,<0.0.3)
+Requires-Dist: cryptography (>=42.0.5,<43.0.0)
+Requires-Dist: escodegen (>=1.0.11,<2.0.0)
+Requires-Dist: esprima (>=4.0.1,<5.0.0)
+Requires-Dist: fastapi (>=0.110.0,<0.111.0)
+Requires-Dist: flake8 (>=7.0.0,<8.0.0)
+Requires-Dist: fuzzywuzzy (>=0.18.0,<0.19.0)
+Requires-Dist: litellm (>=1.40.29,<2.0.0)
+Requires-Dist: llama-index (>=0.10.65,<0.11.0)
+Requires-Dist: llama-index-core (==0.10.65)
+Requires-Dist: llama-index-embeddings-litellm (>=0.1.1,<0.2.0)
+Requires-Dist: llama-index-llms-litellm (>=0.1.4,<0.2.0)
+Requires-Dist: llama-index-readers-file (>=0.1.25,<0.2.0)
+Requires-Dist: llama-index-vector-stores-postgres (>=0.1.11,<0.2.0)
+Requires-Dist: nest-asyncio (>=1.6.0,<2.0.0)
+Requires-Dist: pip (>=24.0,<25.0)
+Requires-Dist: pre-commit (>=3.8.0,<4.0.0)
+Requires-Dist: pyjwt (>=2.8.0,<3.0.0)
+Requires-Dist: pytest-playwright (>=0.4.4,<0.5.0)
+Requires-Dist: redis (>=5.0.7,<6.0.0)
+Requires-Dist: requests (>=2.31.0,<3.0.0)
+Requires-Dist: sqlalchemy (>=2.0.31,<3.0.0)
+Requires-Dist: tqdm (>=4.66.5,<5.0.0)
+Requires-Dist: tree-sitter (>=0.22.3,<0.23.0)
+Requires-Dist: tree-sitter-javascript (>=0.21.4,<0.22.0) ; extra == "javascript" or extra == "all"
+Requires-Dist: tree-sitter-python (>=0.21.0,<0.22.0) ; extra == "python" or extra == "all"
+Requires-Dist: tree-sitter-rust (>=0.21.2,<0.22.0) ; extra == "rust" or extra == "all"
+Requires-Dist: tree-sitter-typescript (>=0.21.2,<0.22.0) ; extra == "typescript" or extra == "all"
+Requires-Dist: uvicorn (>=0.29.0,<0.30.0)
+Description-Content-Type: text/markdown
+
+<p align="center">
+  <img src="/assets/logo.png" alt="Kaizen Logo" width="200"/>
+</p>
+
+<h1 align="center">Kaizen: The Ultimate Code Quality Guardian</h1>
+
+<p align="center">
+  <strong>Unleash the power of AI to find and squash bugs before they reach your customers.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Cloud-Code-AI/"><img src="https://img.shields.io/github/stars/Cloud-Code-AI/cloudcode" alt="Github Stars"></a>
+  <a href="https://github.com/Cloud-Code-AI/cloudcode/pulse"><img src="https://img.shields.io/github/commit-activity/w/Cloud-Code-AI/cloudcode" alt="Commits-per-week"></a>
+  <a href="https://discord.gg/W33Hh5yWpj"><img src="https://img.shields.io/discord/1156434217966764033.svg?style=social&logo=discord" alt="Discord"></a>
+  <a href="https://opensource.org/license/mit"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://hub.docker.com/r/cloudcodeai/kaizen-app"><img src="https://img.shields.io/docker/pulls/cloudcodeai/kaizen-app.svg?style=flat-square" alt="Docker Pulls"></a>
+</p>
+
+<p align="center">
+  <a href="https://www.cloudcode.ai/book-a-demo.html"><img src="https://img.shields.io/badge/Book%20a%20Demo-Book%20Now-brightgreen" alt="Book a Demo"></a>
+  <a href="https://cloudcode.ai/#cta"><img src="https://img.shields.io/badge/Get%20Started-Sign%20Up-blue" alt="Sign Up for Free"></a>
+  <a href="https://github.com/apps/kaizen-bot"><img src="https://img.shields.io/badge/Get%20Kaizen%20App-Install-8A2BE2" alt="Install Kaizen App"></a>
+  <a href="https://cloudcode.ai/kaizen/docs"><img src="https://img.shields.io/badge/docs-view%20Kaizen%20Docs" alt="Kaizen Docs"></a>
+</p>
+
+## 🚀 Kaizen: Your Code Quality Guardian
+
+In the ever-evolving world of software development, delivering high-quality code is paramount. Kaizen, an open-source AI-powered suite, is here to revolutionize your code quality assurance process. With its seamless integration into your existing workflows, Kaizen empowers you to enhance software quality and streamline development, ensuring your applications are robust, reliable, and bug-free.
+
+### 🔍 Key Features
+
+- **🤖 AI-Powered Code Reviews**: Automated pull request reviews with insightful summaries and improvement suggestions, catching potential issues before they escalate.
+
+- **🧪 Smart Test Generation**: 
+  - End-to-end tests based on your application's code and documentation, ensuring comprehensive coverage.
+  - Unit test generation for Python (with TypeScript and React support coming soon!), saving you valuable time and effort.
+- **🎨 UI Testing and Review**: Comprehensive reviews for UI components with automatic test generation, ensuring a flawless user experience.
+- **🔬 Code Scanning**: Identify potential issues before they become problems, allowing you to take proactive measures and maintain high-quality code.
+- **🕵️ Intelligent AI Logger**: Monitor your live applications with our AI-powered logger, catching and reporting bugs as they occur.
+
+## 💡 How Kaizen Helps You Find Bugs
+
+Kaizen takes a two-pronged approach to help you find and squash bugs, both before and after deployment:
+
+1. **Pre-Deployment**: Kaizen provides AI-powered code reviews, automatically generates and runs unit tests, and performs code scanning to identify potential issues early in the development cycle.
+
+2. **Post-Deployment**: Kaizen's AI logger monitors your live applications, catching and reporting bugs as they occur. Additionally, our end-to-end test generation and execution capabilities allow you to thoroughly test your applications after deployment, ensuring a seamless user experience.
+
+## 🌟 Why Choose Kaizen?
+
+- **👁️ Catch Bugs Early**: Identify issues before your customers do, minimizing the impact and cost of fixes.
+- **⏱️ Save Time**: Automate tedious code review and testing tasks, freeing up valuable resources for more strategic work.
+- **💡 Continuous Improvement**: Foster a culture of constant code quality enhancement, driving innovation and excellence.
+- **🔗 Easy Integration**: Seamlessly fits your existing development workflow, minimizing disruptions and maximizing efficiency.
+
+## 🏁 Getting Started
+
+### Quick Start with Cloud Platform
+
+1. Visit [https://beta.cloudcode.ai](https://beta.cloudcode.ai)
+2. Sign up for an account
+3. Follow the on-screen instructions to connect your repository
+
+### Using Kaizen SDK
+
+1. Create and activate a virtual environment:
+
+   **Mac/Linux**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+   **Windows**
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
+2. Install poetry and Kaizen:
+   ```bash
+   pip install poetry kaizen-cloudcode
+   ```
+   
+3. Generate tests:
+   
+   **Mac/Linux**
+   ```bash
+   PYTHONPATH=. poetry run python examples/e2e_test/generate.py
+   ```
+
+   **Windows**
+   ```bash
+   set PYTHONPATH=.
+   poetry run python examples/basic/generate.py
+   ```
+
+
+5. Execute tests:
+   
+   **Mac/Linux**
+   ```bash
+   PYTHONPATH=. poetry run python examples/e2e_test/execute.py
+   ```
+
+   **Windows**
+   ```bash
+   set PYTHONPATH=.
+   poetry run python examples/basic/execute.py
+   ```
+   
+   or
+
+   **Mac/Linux/Windows**   
+   ```bash
+   pytest -v .kaizen/ui-tests/
+   ```
+
+### 🔧 GitHub App Setup
+
+You only need to install the GitHub app for code review. Other functionalities don't need a GitHub app.
+For PR review and description updates:
+
+1. Follow our [GitHub App Setup Guide](docs/pages/github_app.md)
+2. Deploy the API using Docker:
+   ```bash
+   docker-compose up
+   ```
+
+> 📝 Note: Create a `.env` file from `.env.example` and store the GitHub app PEM file as `GITHUB_APP_KEY.pem`.
+
+## 🎥 See Kaizen in Action
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=280CfSQs2ss">
+    <img src="https://img.youtube.com/vi/280CfSQs2ss/0.jpg" alt="Kaizen Introduction">
+  </a>
+</p>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Cloud-Code-AI/kaizen&type=Date)](https://star-history.com/#Cloud-Code-AI/kaizen&Date)
+
+## 📄 License
+
+Kaizen is released under the MIT License.
+
+## 📞 Contact
+
+Need help or have questions? Reach out to us at support@cloudcode.ai.
+
+---
+
+<p align="center">
+  Made with ❤️ by the Kaizen team
+</p>

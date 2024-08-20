@@ -1,7 +1,7 @@
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export const sendMessage = async (message, model) => {
-  const response = await fetch(`${API_BASE_URL}`, {
+  const response = await fetch(`${API_BASE_URL}/prompt`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

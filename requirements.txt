@@ -1,3 +1,6 @@
 requests==2.32.0
 fuzzywuzzy==0.18.0
 setuptools
+flask
+python-dotenv
+requests

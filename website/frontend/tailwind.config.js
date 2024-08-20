@@ -52,6 +52,14 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      textColor: {
+        primary: 'var(--text-primary)',
+        secondary: 'var(--text-secondary)',
+      },
+      backgroundColor: {
+        primary: 'var(--bg-primary)',
+        secondary: 'var(--bg-secondary)',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -71,7 +79,18 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      scrollbar: {
+        hide: {
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+          '&': {
+            '-ms-overflow-style': 'none',  /* IE and Edge */
+            'scrollbar-width': 'none',  /* Firefox */
+          },
+        },
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require('tailwind-scrollbar-hide')],
 }

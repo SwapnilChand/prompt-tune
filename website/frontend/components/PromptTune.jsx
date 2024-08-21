@@ -92,7 +92,7 @@ const PromptTune = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return; // Ensure there's a message to send
+    if (!inputMessage.trim()){ return;} // Ensure there's a message to send
     setInputMessage(''); // Clear the input message immediately
     setMessageSent(true); // Set messageSent to true when a message is sent
     setIsThinking(true); // Set isThinking to true to show the animation
@@ -183,18 +183,18 @@ const PromptTune = () => {
           </TooltipProvider>
         </div>
       </div>
-      <div className="space-y-2 mr-2">
+      <div className="space-y-2 ml-2" style={{ maxHeight: 'calc(100vh - 275px)', overflowY: 'auto', paddingRight: '10px'}}>
         {messages.map((message, index) => (
-            <div key={index} className={`p-3 rounded-lg max-w-[70%] ${
+            <p key={index} className={`p-3 rounded-lg ${
               message.role === 'user'
-                ? 'bg-gray-200 text-gray-800 rounded-br-none ml-auto'
-                : 'bg-indigo-500 text-white rounded-bl-none mr-auto'
+                ? 'bg-gray-200 text-gray-800 rounded-br-none ml-auto max-w-[30%]'
+                : 'bg-indigo-500 text-white rounded-bl-none mr-auto max-w-[50%]'
             }`}>
-              <p>{message.content}</p>
-            </div>
+              {message.content}
+            </p>
           ))}
         {isThinking && (
-          <div className="flex justify-center">
+          <div className="justify-left bg-indigo-500 text-white">
             <ThinkingAnimation />
           </div>
         )}

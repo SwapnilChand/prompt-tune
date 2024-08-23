@@ -3,15 +3,26 @@
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import ModelTune from '../components/ModelTune';
-import PromptTune from '../components/PromptTune'; // Import PromptTune
+import PromptTune from '../components/PromptTune';
 import IntroOverlay from '../components/IntroOverlay';
 import { ThemeProvider } from "@/components/ThemeProvider";
+import ConfirmationDialog from '../components/ConfirmationDialog'; // Import the dialog
 
 export default function Home() {
   const [isPromptTune, setIsPromptTune] = useState(true); // State to manage which component to render
+  const [showDialog, setShowDialog] = useState(false); // State to manage the dialog visibility
 
-  const handleToggle = (toggleState) => {
-    setIsPromptTune(toggleState); // Update the state based on the toggle
+  const handleToggle = () => {
+    setShowDialog(true); // Show the confirmation dialog
+  };
+
+  const handleConfirmToggle = () => {
+    setIsPromptTune(prev => !prev); // Toggle the component
+    setShowDialog(false); // Close the dialog
+  };
+
+  const handleCancelToggle = () => {
+    setShowDialog(false); // Close the dialog without toggling
   };
 
   return (
@@ -19,10 +30,16 @@ export default function Home() {
       <IntroOverlay />
       <main className="min-h-screen bg-background">
         <Header onToggle={handleToggle} />
-        {/* Render the active component based on the toggle state */}
         <div className="mt-4">
           {isPromptTune ? <PromptTune /> : <ModelTune />}
         </div>
+        {/* Show the confirmation dialog if needed */}
+        {showDialog && (
+          <ConfirmationDialog
+            onConfirm={handleConfirmToggle}
+            onCancel={handleCancelToggle}
+          />
+        )}
       </main>
     </ThemeProvider>
   );

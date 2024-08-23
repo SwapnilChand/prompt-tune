@@ -28,6 +28,7 @@ import {
   ShareIcon,
   ClockIcon,
   WandIcon,
+  PlusIcon,
   SendIcon,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -53,7 +54,49 @@ const ThinkingAnimation = () => (
     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
   </div>
 );
+const Popup = ({ onClose, onSubmit }) => {
+  const [modelName, setModelName] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [apiBase, setApiBase] = useState('');
 
+  const handleSubmit = () => {
+    onSubmit({ modelName, apiKey, apiBase });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white p-4 rounded shadow-lg max-w-md w-full">
+        <h2 className="text-lg text-black font-semibold mb-2">Add New Model</h2>
+        <input
+          type="text"
+          placeholder="Model Name"
+          value={modelName}
+          onChange={(e) => setModelName(e.target.value)}
+          className="w-full mb-2 p-2 border rounded"
+        />
+        <input
+          type="text"
+          placeholder="API Key"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          className="w-full mb-2 p-2 border rounded"
+        />
+        <input
+          type="text"
+          placeholder="API Base (optional)"
+          value={apiBase}
+          onChange={(e) => setApiBase(e.target.value)}
+          className="w-full mb-4 p-2 border rounded"
+        />
+        <div className="flex justify-end space-x-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit}>Save</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 const PromptTune = () => {
   const { toast } = useToast();
   const [chatBoxes, setChatBoxes] = useState([{ id: 1, messages: [], model: '' }]);
@@ -65,6 +108,9 @@ const PromptTune = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [messageSent, setMessageSent] = useState(false);
   const chatBoxRef = useRef(null); 
+  const [showPopup, setShowPopup] = useState(false);
+
+
 
   useEffect(() => {
     setIsClient(true);
@@ -136,28 +182,29 @@ const PromptTune = () => {
     }
   };
 
-
   const renderChatBox = ({ id, messages, model }) => (
     <div key={id} className="border rounded-lg p-4 mb-4 relative">
       <div className="flex justify-between items-center mb-4">
-        <Select value={model} onValueChange={(value) => handleModelChange(id, value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select LLM" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="gpt3">GPT-3</SelectItem>
-            <SelectItem value="gpt4">GPT-4</SelectItem>
-            <SelectItem value="claude">Claude</SelectItem>
-          </SelectContent>
-        </Select>
         <div className="flex items-center space-x-2">
-          <TooltipProvider>
+          <Select value={model} onValueChange={(value) => handleModelChange(id, value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select LLM" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gpt3">GPT-3</SelectItem>
+              <SelectItem value="gpt4">GPT-4</SelectItem>
+              <SelectItem value="claude">Claude</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => setShowPopup(true)}>
+            <PlusIcon className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex items-center space-x-2">
+          {/* <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="text-white bg-blue-500 hover:bg-blue-600"
-                >
+                <Button variant="outline" className="text-white bg-blue-500 hover:bg-blue-600">
                   <ShareIcon className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -165,14 +212,11 @@ const PromptTune = () => {
                 <p>Share this conversation</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
+          </TooltipProvider> */}
+          {/* <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="text-white bg-blue-500 hover:bg-blue-600"
-                >
+                <Button variant="outline" className="text-white bg-blue-500 hover:bg-blue-600">
                   <ClockIcon className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -180,25 +224,33 @@ const PromptTune = () => {
                 <p>View conversation history</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
+          </TooltipProvider> */}
         </div>
       </div>
       <div className="space-y-2 ml-2" style={{ maxHeight: 'calc(100vh - 275px)', overflowY: 'auto', paddingRight: '10px'}}>
         {messages.map((message, index) => (
-            <p key={index} className={`p-3 rounded-lg ${
-              message.role === 'user'
-                ? 'bg-gray-200 text-gray-800 rounded-br-none ml-auto max-w-[30%]'
-                : 'bg-indigo-500 text-white rounded-bl-none mr-auto max-w-[50%]'
-            }`}>
-              {message.content}
-            </p>
-          ))}
+          <p key={index} className={`p-3 rounded-lg ${
+            message.role === 'user'
+              ? 'bg-gray-200 text-gray-800 rounded-br-none ml-auto max-w-[30%]'
+              : 'bg-indigo-500 text-white rounded-bl-none mr-auto max-w-[50%]'
+          }`}>
+            {message.content}
+          </p>
+        ))}
         {isThinking && (
           <div className="justify-left bg-indigo-500 text-white">
             <ThinkingAnimation />
           </div>
         )}
       </div>
+      {showPopup && (
+        <Popup
+          onClose={() => setShowPopup(false)}
+          onSubmit={(newModel) => {
+            console.log(newModel);
+          }}
+        />
+      )}
     </div>
   );
 
@@ -206,6 +258,9 @@ const PromptTune = () => {
     return null;
   }
 
+  const handlePlusButtonClick = () => {
+    setShowPopup(true);
+  };
   return (
     <>
       <div>
@@ -217,7 +272,7 @@ const PromptTune = () => {
           <div className="fixed bottom-0 left-0 right-0 bg-background p-4">
             <div className="flex items-center space-x-2">
               <DynamicPromptLibrary />
-              <DynamicAttachedFiles />
+              {/* <DynamicAttachedFiles /> */}
               <input
                 type="text"
                 className="flex-grow border rounded-lg px-4 py-2 text-black"

@@ -39,7 +39,11 @@ const PromptLibrary = () => {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [promptTitle, setPromptTitle] = useState('');
   const [promptContent, setPromptContent] = useState('');
-  const [prompts, setPrompts] = useState([]); 
+  const [prompts, setPrompts] = useState(() => {
+    // Load prompts from localStorage on initial render
+    const savedPrompts = localStorage.getItem('prompts');
+    return savedPrompts ? JSON.parse(savedPrompts) : [];
+  });
 
   const handleDialogOpen = () => {
     setDialogOpen(true);
@@ -49,11 +53,18 @@ const PromptLibrary = () => {
     setDialogOpen(false);
     setPromptTitle('');
     setPromptContent('');
+    setPrompts(() => {
+      // Clear prompts from localStorage when dialog is closed
+      localStorage.removeItem('prompts');
+      return [];
+    });
   };
 
   const handleSavePrompt = () => {
     if (promptTitle && promptContent) {
-      setPrompts([...prompts, { title: promptTitle, content: promptContent }]);
+      const newPrompts = [...prompts, { title: promptTitle, content: promptContent }];
+      setPrompts(newPrompts);
+      localStorage.setItem('prompts', JSON.stringify(newPrompts));
       handleDialogClose(); 
     }
   };

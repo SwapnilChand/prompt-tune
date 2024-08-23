@@ -7,6 +7,7 @@ import PromptTune from '../components/PromptTune';
 import IntroOverlay from '../components/IntroOverlay';
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ConfirmationDialog from '../components/ConfirmationDialog'; // Import the dialog
+import { ToastProvider } from "@/components/ui/toast"; // Adjust the import based on your structure
 
 export default function Home() {
   const [isPromptTune, setIsPromptTune] = useState(true); // State to manage which component to render
@@ -26,21 +27,23 @@ export default function Home() {
   };
 
   return (
-    <ThemeProvider> 
-      <IntroOverlay />
-      <main className="min-h-screen bg-background">
-        <Header onToggle={handleToggle} />
-        <div className="mt-4">
-          {isPromptTune ? <PromptTune /> : <ModelTune />}
-        </div>
-        {/* Show the confirmation dialog if needed */}
-        {showDialog && (
-          <ConfirmationDialog
-            onConfirm={handleConfirmToggle}
-            onCancel={handleCancelToggle}
-          />
-        )}
-      </main>
-    </ThemeProvider>
+    <ToastProvider>
+      <ThemeProvider>
+        <IntroOverlay />
+        <main className="min-h-screen bg-background">
+          <Header onToggle={handleToggle} />
+          <div className="mt-4">
+            {isPromptTune ? <PromptTune /> : <ModelTune />}
+          </div>
+          {/* Show the confirmation dialog if needed */}
+          {showDialog && (
+            <ConfirmationDialog
+              onConfirm={handleConfirmToggle}
+              onCancel={handleCancelToggle}
+            />
+          )}
+        </main>
+      </ThemeProvider>
+    </ToastProvider>
   );
 }

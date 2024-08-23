@@ -2,15 +2,12 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 
-// Dynamically import components that might cause hydration issues
 const DynamicPromptLibrary = dynamic(() => import("./PromptLibrary"), {
   ssr: false,
 });
-// const DynamicAttachedFiles = dynamic(() => import('./AttachedFiles'), { ssr: false });
 const DynamicCompare = dynamic(() => import("./Compare"), { ssr: false });
 
 import PromptLibrary from "./PromptLibrary";
-import AttachedFiles from "./AttachedFiles";
 import Compare from "./Compare";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,17 +23,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  ShareIcon,
-  ClockIcon,
-  WandIcon,
-  PlusIcon,
-  SendIcon,
-  XIcon
-} from "lucide-react";
+import { XIcon, PlusIcon, SendIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { sendMessage } from "./KaizenApi";
+import { sendModelMessage, addLLM } from "./KaizenApi";
 
 const customResponse = (inputText) => {
   const inputLower = inputText.toLowerCase().trim();
@@ -116,9 +106,10 @@ const Popup = ({ onClose, onSubmit }) => {
 };
 const ModelTune = () => {
   const { toast } = useToast();
-  const [chatBoxes, setChatBoxes] = useState([
-    { id: 1, messages: [], model: "" },
-  ]);
+  const [chatBoxes, setChatBoxes] = useState(() => {
+    const savedHistory = sessionStorage.getItem("modelTuneHistory");
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  });
   const [inputMessage, setInputMessage] = useState("");
   const [showWarning, setShowWarning] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState(null);
@@ -128,6 +119,8 @@ const ModelTune = () => {
   const [messageSent, setMessageSent] = useState(false);
   const chatBoxRef = useRef(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [chatHistory, setChatHistory] = useState({}); // New state to store chat history
+  const [llmOptions, setLlmOptions] = useState([]); // New state for LLM options
 
   const addChatBox = () => {
     if (chatBoxes.length >= 4) {
@@ -147,20 +140,41 @@ const ModelTune = () => {
     }
     const newId = chatBoxes.length + 1;
     setChatBoxes([...chatBoxes, { id: newId }]);
+    setChatHistory((prev) => ({ ...prev, [newId]: [] })); // Initialize chat history for new chat box
   };
 
   const removeChatBox = (id) => {
     setChatBoxes(chatBoxes.filter((box) => box.id !== id));
+    setChatHistory((prev) => {
+      const newHistory = { ...prev };
+      delete newHistory[id]; // Remove chat history for the removed chat box
+      return newHistory;
+    });
   };
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const handleModelChange = (id, model) => {
+  useEffect(() => {
+    sessionStorage.setItem("modelTuneHistory", JSON.stringify(chatBoxes));
+  }, [chatBoxes]);
+
+  const handleModelChange = async (id, model) => {
     setShowWarning(true);
     setSelectedModelId(id);
     setNewModel(model);
+
+    try {
+      await addLLM(model, "", ""); // Call addLLM method with empty strings for API key and base
+    } catch (error) {
+      console.error("Error adding LLM:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add LLM model. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const confirmModelChange = () => {
@@ -185,24 +199,23 @@ const ModelTune = () => {
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) {
       return;
-    } // Ensure there's a message to send
-    setInputMessage(""); // Clear the input message immediately
-    setMessageSent(true); // Set messageSent to true when a message is sent
-    setIsThinking(true); // Set isThinking to true to show the animation
+    }
+    setInputMessage("");
+    setMessageSent(true);
+    setIsThinking(true);
 
     const updatedChatBoxes = await Promise.all(
       chatBoxes.map(async (box) => {
         const userMessage = { role: "user", content: inputMessage };
-        const updatedMessages = [...box.messages, userMessage];
+        const updatedMessages = [...(box.messages || []), userMessage];
         const customResp = customResponse(inputMessage);
+
         if (customResp) {
-          // It's a short input or potential greeting, use the custom response
           const aiMessage = { role: "assistant", content: customResp };
           updatedMessages.push(aiMessage);
         } else {
-          // It's a longer input, send to LLM
           try {
-            const response = await sendMessage(inputMessage, box.model);
+            const response = await sendModelMessage(inputMessage, box.model);
             const aiMessage = { role: "assistant", content: response.message };
             updatedMessages.push(aiMessage);
           } catch (error) {
@@ -223,114 +236,135 @@ const ModelTune = () => {
     );
 
     setChatBoxes(updatedChatBoxes);
-    setIsThinking(false); // Set isThinking to false after processing
+    setChatHistory((prev) => {
+      const newHistory = { ...prev };
+      updatedChatBoxes.forEach((box) => {
+        newHistory[box.id] = box.messages;
+      });
+      return newHistory;
+    });
+    setIsThinking(false);
 
-    // Scroll to the bottom of the chatbox
     if (chatBoxRef.current) {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
   };
 
-  const renderChatBox = ({ id, messages, model }) => (
-    <div key={id} className="border rounded-lg p-4 mb-4 relative">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <Select
-            value={model}
-            onValueChange={(value) => handleModelChange(id, value)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select LLM" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gpt3">GPT-3</SelectItem>
-              <SelectItem value="gpt4">GPT-4</SelectItem>
-              <SelectItem value="claude">Claude</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={() => setShowPopup(true)}>
-            <PlusIcon className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="text-white bg-blue-500 hover:bg-blue-600"
-                  onClick={() => removeChatBox(id)}
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Close instance</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          {/* <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" className="text-white bg-blue-500 hover:bg-blue-600">
-                  <ShareIcon className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Share this conversation</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider> */}
-          {/* <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" className="text-white bg-blue-500 hover:bg-blue-600">
-                  <ClockIcon className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>View conversation history</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider> */}
-        </div>
-      </div>
-      <div
-        className="space-y-2 ml-2"
-        style={{
-          maxHeight: "calc(100vh - 275px)",
-          overflowY: "auto",
-          paddingRight: "10px",
-        }}
-      >
-        {messages.map((message, index) => (
-          <p
-            key={index}
-            className={`p-3 rounded-lg ${
-              message.role === "user"
-                ? "bg-gray-200 text-gray-800 rounded-br-none ml-auto max-w-[30%]"
-                : "bg-indigo-500 text-white rounded-bl-none mr-auto max-w-[50%]"
-            }`}
-          >
-            {message.content}
-          </p>
-        ))}
-        {isThinking && (
-          <div className="justify-left bg-indigo-500 text-white">
-            <ThinkingAnimation />
+  const handleAddNewModel = (newModel) => {
+    setLlmOptions((prev) => [...prev, newModel.modelName]);
+    // You might want to call addLLM here as well
+    addLLM(newModel.modelName, newModel.apiKey, newModel.apiBase);
+  };
+  const renderChatBox = ({ id, messages, model }) => {
+    const storedMessages = chatHistory[id] || []; // Ensure storedMessages is always an array
+    return (
+      <div key={id} className="border rounded-lg p-4 mb-4 relative">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-2">
+            <Select
+              value={model}
+              onValueChange={(value) => handleModelChange(id, value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue
+                  placeholder={
+                    llmOptions.length === 0 ? "No LLMs added" : model
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {llmOptions.length === 0 ? (
+                  <SelectItem value="no-llms" disabled>
+                    No LLMs added
+                  </SelectItem>
+                ) : (
+                  llmOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setShowPopup(true)}>
+              <PlusIcon className="h-4 w-4" />
+            </Button>
           </div>
+          <div className="flex items-center space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="text-white bg-blue-500 hover:bg-blue-600"
+                    onClick={() => removeChatBox(id)}
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Close instance</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {/* <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" className="text-white bg-blue-500 hover:bg-blue-600">
+                    <ShareIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Share this conversation</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider> */}
+            {/* <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" className="text-white bg-blue-500 hover:bg-blue-600">
+                    <ClockIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View conversation history</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider> */}
+          </div>
+        </div>
+        <div
+          className="space-y-2 ml-2"
+          style={{
+            maxHeight: "calc(100vh - 275px)",
+            overflowY: "auto",
+            paddingRight: "10px",
+          }}
+        >
+          {(messages || []).map((message, index) => (
+            <p
+              key={index}
+              className={`p-3 rounded-lg ${
+                message.role === "user"
+                  ? "bg-gray-200 text-gray-800 rounded-br-none ml-auto max-w-[30%]"
+                  : "bg-indigo-500 text-white rounded-bl-none mr-auto max-w-[50%]"
+              }`}
+            >
+              {message.content}
+            </p>
+          ))}
+          {isThinking && (
+            <div className="justify-left bg-indigo-500 text-white">
+              <ThinkingAnimation />
+            </div>
+          )}
+        </div>
+        {showPopup && (
+          <Popup onClose={() => setShowPopup(false)} onSubmit={handleAddNewModel} />
         )}
       </div>
-      {showPopup && (
-        <Popup
-          onClose={() => setShowPopup(false)}
-          onSubmit={(newModel) => {
-            console.log(newModel);
-          }}
-        />
-      )}
-    </div>
-  );
+    );
+  };
 
   if (!isClient) {
     return null;
@@ -364,7 +398,6 @@ const ModelTune = () => {
                 </Tooltip>
               </TooltipProvider>
               <DynamicPromptLibrary />
-              {/* <DynamicAttachedFiles /> */}
               <input
                 type="text"
                 className="flex-grow border rounded-lg px-4 py-2 text-black"
@@ -412,6 +445,13 @@ const ModelTune = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {showPopup && (
+            <Popup
+              onClose={() => setShowPopup(false)}
+              onSubmit={handleAddNewModel}
+            />
           )}
         </div>
       </div>

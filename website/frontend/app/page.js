@@ -1,12 +1,12 @@
 "use client"; 
 
 import React, { useState } from 'react';
-import Header from '@/components/Header';
-import ModelTune from '../components/ModelTune';
-import PromptTune from '../components/PromptTune';
-import IntroOverlay from '../components/IntroOverlay';
-import { ThemeProvider } from "@/components/ThemeProvider";
-import ConfirmationDialog from '../components/ConfirmationDialog'; // Import the dialog
+import Header from '@/app/components/Header';
+import ModelTune from './components/ModelTune';
+import PromptTune from './components/PromptTune';
+import IntroOverlay from './components/IntroOverlay';
+import { ThemeProvider } from "@/app/components/ThemeProvider";
+import ConfirmationDialog from './components/ConfirmationDialog'; // Import the dialog
 import { ToastProvider } from "@/components/ui/toast"; // Adjust the import based on your structure
 
 export default function Home() {

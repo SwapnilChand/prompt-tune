@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from kaizen.llms.provider import LLMProvider
-from uuid import uuid4
+import json
+import litellm
 
 CONFIG_FILE = 'config.json'
 
@@ -9,6 +10,7 @@ app = Flask(__name__)
 CORS(app)
 conversations = {}
 
+llm_provider = LLMProvider()
 llm_provider_prompt_tune = LLMProvider(system_prompt="Please transform the following original prompt into four distinct, shorter prompts. Each new prompt should be designed to generate more precise and concise responses. The goal is to make the prompts computationally efficient while encouraging brief yet informative answers.")
 llm_provider_model_tune = LLMProvider()
 
@@ -56,67 +58,64 @@ def chat_model():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# def load_config():
-#     """Load the configuration from the JSON file."""
-#     with open(CONFIG_FILE, 'r') as file:
-#         return json.load(file)
-
-# def save_config(config):
-#     """Save the updated configuration back to the JSON file."""
-#     with open(CONFIG_FILE, 'w') as file:
-#         json.dump(config, file, indent=2)
-
-# @app.route('/edit-model', methods=['POST'])
-# def edit_model():
-
-    """Edit the model name, API key, and API base."""
+@app.route('/api/add-llm', methods=['POST'])
+def add_llm():
+    print("add_llm function called")  # Debugging line
     data = request.json
+    model_name = data.get('name')  # Get the model name from the request
+    model = data.get('model')  # Get the model identifier
+    api_key = data.get('key')  # Get the API key
+    api_base = data.get('base', '')  # Get the API base, default to empty if not provided
 
-    # Validate the input
-    model_name = data.get('model_name')
-    api_key = data.get('api_key')
-    api_base = data.get('api_base')
-
-    if not model_name or (api_key is None and api_base is None):
-        return jsonify({"error": "Please provide model_name and at least one of api_key or api_base."}), 400
+    if not model_name or not model or not api_key:
+        return jsonify({"error": "Model name, model identifier, and API key are required."}), 400
 
     # Load the current configuration
-    config = load_config()
+    with open(CONFIG_FILE, 'r') as file:
+        config = json.load(file)
+        print("Current configuration:", config)
 
-    # Find the model to edit
-    model_found = False
-    for model in config['language_model']['models']:
-        if model['model_name'] == model_name:
-            if api_key is not None:
-                model['litellm_params']['api_key'] = api_key
-            if api_base is not None:
-                model['litellm_params']['api_base'] = api_base
-            model_found = True
-            break
+    # Create the new model configuration
+    new_model = {
+        "model_name": model_name,
+        "litellm_params": {
+            "model": model,
+            "api_key": api_key,
+            "api_base": api_base
+        },
+        "model_info": {
+            "max_tokens": 4096,
+            "input_cost_per_token": 1.5e-05,
+            "output_cost_per_token": 1.5e-05,
+            "max_input_tokens": 128000,
+            "max_output_tokens": 4096,
+            "litellm_provider": "openai",
+            "mode": "chat"
+        }
+    }
 
-    if not model_found:
-        return jsonify({"error": "Model not found."}), 404
+    # Append the new model to the existing models list
+    config['language_model']['models'].append(new_model)
 
-    # Save the updated configuration
-    save_config(config)
+    # Save the updated configuration back to the file
+    with open(CONFIG_FILE, 'w') as file:
+        json.dump(config, file, indent=4)
 
-    return jsonify({"message": "Model updated successfully."}), 200
+    print("Configuration updated successfully")  # Debugging line
+    return jsonify({"message": f"{model_name} model added successfully."}), 201
 
-@app.route('/api/conversations', methods=['POST'])
-def save_conversation():
+@app.route('/api/token-count/', methods=['POST'])
+def token_count():
     data = request.json
-    messages = data.get('messages', [])
-    conversation_id = str(uuid4())  # Generate a unique ID
-    conversations[conversation_id] = messages  # Store the conversation
-    return jsonify({'shareableLink': f'http://localhost:5000/share/{conversation_id}'}), 201
+    text = data.get('text', '')
+    print('text',text)
+    msg=[{"role": "user", "content": text}]
+    try:
+        token_count = litellm.token_counter(model=llm_provider.DEFAULT_MODEL, messages=msg)
+        return jsonify({'token_count': token_count})
+    except Exception as e:
+        print(f"Error calculating token count: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-# Endpoint to retrieve a conversation by ID
-@app.route('/api/conversations/<conversation_id>', methods=['GET'])
-def get_conversation(conversation_id):
-    conversation = conversations.get(conversation_id)
-    if conversation is not None:
-        return jsonify(conversation)
-    else:
-        return jsonify({'error': 'Conversation not found'}), 404
 if __name__ == '__main__':
     app.run(port=5000)

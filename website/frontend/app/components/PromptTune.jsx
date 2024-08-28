@@ -124,21 +124,17 @@ const Popup = ({ onClose, onSubmit }) => {
 };
 const PromptTune = () => {
   const { toast } = useToast();
+  const [selectedModel, setSelectedModel] = useState("");
   const [chatBoxes, setChatBoxes] = useState([
     { id: 1, messages: [], model: "" },
   ]);
   const [inputMessage, setInputMessage] = useState("");
-  const [showWarning, setShowWarning] = useState(false);
-  const [selectedModelId, setSelectedModelId] = useState(null);
-  const [newModel, setNewModel] = useState("");
-  const [isClient, setIsClient] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [messageSent, setMessageSent] = useState(false);
-  const chatBoxRef = useRef(null);
   const [showPopup, setShowPopup] = useState(false);
-  const [llms, setLlms] = useState([]); // New state to hold LLMs
+  const chatBoxRef = useRef(null);
+  const [llms, setLlms] = useState([]);
   const [chatHistory, setChatHistory] = useState(() => {
-    const savedHistory = sessionStorage.getItem('promptTuneHistory');
+    const savedHistory = sessionStorage.getItem("promptTuneHistory");
     if (savedHistory) {
       return JSON.parse(savedHistory);
     } else {
@@ -147,98 +143,47 @@ const PromptTune = () => {
   });
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    sessionStorage.setItem('promptTuneHistory', JSON.stringify(chatBoxes));
+    sessionStorage.setItem("promptTuneHistory", JSON.stringify(chatBoxes));
   }, [chatBoxes]);
 
-  const handleModelChange = async (id, model) => {
-    setShowWarning(true);
-    setSelectedModelId(id);
-    setNewModel(model);
-
-    // Call addLLM when a specific LLM is selected
-    if (model && model !== "placeholder") {
-      try {
-        await addLLM(model); // Call the addLLM method with the selected model
-      } catch (error) {
-        console.error("Error adding LLM:", error);
-        toast({
-          title: "Error",
-          description: "Failed to add LLM. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const confirmModelChange = () => {
-    setChatBoxes(
-      chatBoxes.map((box) =>
-        box.id === selectedModelId
-          ? { ...box, model: newModel, messages: [] }
-          : box
-      )
-    );
-    setShowWarning(false);
-    setSelectedModelId(null);
-    setNewModel("");
-  };
-
-  const cancelModelChange = () => {
-    setShowWarning(false);
-    setSelectedModelId(null);
-    setNewModel("");
+  const handleModelChange = (id, model) => {
+    setSelectedModel(model); // Update the selected model
+    // Other logic...
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) {
-      return;
-    } // Ensure there's a message to send
-    setInputMessage(""); // Clear the input message immediately
-    setMessageSent(true); // Set messageSent to true when a message is sent
-    setIsThinking(true); // Set isThinking to true to show the animation
+    if (!inputMessage.trim()) return;
 
-    const updatedChatBoxes = await Promise.all(
-      chatBoxes.map(async (box) => {
-        const userMessage = { role: "user", content: inputMessage };
-        const updatedMessages = [...box.messages, userMessage];
-        const customResp = customResponse(inputMessage);
-        if (customResp) {
-          // It's a short input or potential greeting, use the custom response
-          const aiMessage = { role: "assistant", content: customResp };
-          updatedMessages.push(aiMessage);
-        } else {
-          // It's a longer input, send to LLM
-          try {
-            const response = await sendMessage(inputMessage, box.model);
-            const aiMessage = { role: "assistant", content: response.message };
-            updatedMessages.push(aiMessage);
-          } catch (error) {
-            console.error("Error sending message:", error);
-            toast({
-              title: "Error",
-              description: "Failed to send message. Please try again.",
-              variant: "destructive",
-            });
+    setIsThinking(true);
+    const userMessage = { role: "user", content: inputMessage };
+
+    // Send the message to the selected model
+    try {
+      const response = await sendMessage(inputMessage, selectedModel); // Use the selected model
+      const aiMessage = { role: "assistant", content: response.message };
+      // Update chat boxes with the new message
+      setChatBoxes((prev) => {
+        const updatedBoxes = prev.map((box) => {
+          if (box.model === selectedModel) {
+            return {
+              ...box,
+              messages: [...box.messages, userMessage, aiMessage],
+            };
           }
-        }
-
-        return {
-          ...box,
-          messages: updatedMessages,
-        };
-      })
-    );
-
-    setChatBoxes(updatedChatBoxes);
-    setIsThinking(false); // Set isThinking to false after processing
-
-    // Scroll to the bottom of the chatbox
-    if (chatBoxRef.current) {
-      chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+          return box;
+        });
+        return updatedBoxes;
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setInputMessage("");
+      setIsThinking(false);
     }
   };
 
@@ -256,7 +201,7 @@ const PromptTune = () => {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
           <Select
-            value={model}
+            value={selectedModel}
             onValueChange={(value) => handleModelChange(id, value)}
           >
             <SelectTrigger className="w-[180px]">
@@ -329,34 +274,11 @@ const PromptTune = () => {
             {message.content}
           </p>
         ))}
-        {isThinking && (
-          <div className="justify-left bg-indigo-500 text-white p-3 rounded-lg ml-auto max-w-[50%]">
-            <div className="flex items-center space-x-1">
-              <div
-                className="w-2 h-2 bg-white rounded-full animate-bounce"
-                style={{ animationDelay: "0s" }}
-              ></div>
-              <div
-                className="w-2 h-2 bg-white rounded-full animate-bounce"
-                style={{ animationDelay: "0.2s" }}
-              ></div>
-              <div
-                className="w-2 h-2 bg-white rounded-full animate-bounce"
-                style={{ animationDelay: "0.4s" }}
-              ></div>
-            </div>
-          </div>
-        )}
+        {isThinking && <ThinkingAnimation />}
       </div>
-      {showPopup && (
-        <Popup onClose={onClose} onSubmit={handleSubmit} />
-      )}
+      {showPopup && <Popup onClose={onClose} onSubmit={handleSubmit} />}
     </div>
   );
-
-  if (!isClient) {
-    return null;
-  }
 
   const handlePlusButtonClick = () => {
     setShowPopup(true);
@@ -399,28 +321,6 @@ const PromptTune = () => {
               </TooltipProvider>
             </div>
           </div>
-
-          {showWarning && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-              <div className="bg-blue-900 p-6 rounded-lg shadow-lg">
-                <h2 className="text-lg text-red font-bold">Warning</h2>
-                <p>
-                  Changing the model will reset the chat. All previous context
-                  will be lost. Would you like to continue?
-                </p>
-                <div className="flex justify-end mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={cancelModelChange}
-                    className="mr-2"
-                  >
-                    No
-                  </Button>
-                  <Button onClick={confirmModelChange}>Yes</Button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

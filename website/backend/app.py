@@ -108,7 +108,7 @@ def add_llm():
 def token_count():
     data = request.json
     text = data.get('text', '')
-    print('text',text)
+    print('text',text) 
     msg=[{"role": "user", "content": text}]
     try:
         token_count = litellm.token_counter(model=llm_provider.DEFAULT_MODEL, messages=msg)
@@ -118,4 +118,4 @@ def token_count():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run()

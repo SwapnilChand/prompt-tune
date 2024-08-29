@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -15,6 +14,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect, useCallback } from "react";
+import debounce from "lodash/debounce";
+import DiffMatchPatch from 'diff-match-patch';
+
 
 const Compare = () => {
   const [isCompareDialogOpen, setCompareDialogOpen] = useState(false);
@@ -25,41 +28,71 @@ const Compare = () => {
   const [similarityScore, setSimilarityScore] = useState(0);
   const [highlightedTexts, setHighlightedTexts] = useState([]);
   const [tokenCounts, setTokenCounts] = useState({});
+  const [tokenCountErrors, setTokenCountErrors] = useState({});
 
   useEffect(() => {
     updateSimilarityScore();
   }, [selectedBoxes, textBoxes]);
 
-  useEffect(() => {
-    updateTokenCounts();
-  }, [textBoxes]);
-
-  const updateTokenCounts = async () => {
-    const updatedTokenCounts = { ...tokenCounts };
-    for (const box of textBoxes) {
-      if (box.content !== "") {
-        try {
-          const response = await fetch('http://127.0.0.1:8000/api/token-count/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: box.content }),
-          });
-          if (response.ok) {
-            const data = await response.json();
-            updatedTokenCounts[box.id] = data.token_count;
-          } else {
-            console.error(`Error calculating token count for box ${box.id}: ${await response.text()}`);
-          }
-        } catch (error) {
-          console.error(`Error calculating token count for box ${box.id}:`, error);
-        }
-      } else {
-        updatedTokenCounts[box.id] = 0;
+  const debouncedUpdateTokenCount = useCallback(
+    debounce(async (id, content) => {
+      if (content.trim() === "") {
+        setTokenCounts((prevCounts) => ({
+          ...prevCounts,
+          [id]: 0,
+        }));
+        setTokenCountErrors((prevErrors) => ({
+          ...prevErrors,
+          [id]: null,
+        }));
+        return;
       }
-    }
-    setTokenCounts(updatedTokenCounts);
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/api/token-count/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: content }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setTokenCounts((prevCounts) => ({
+            ...prevCounts,
+            [id]: data.token_count,
+          }));
+          setTokenCountErrors((prevErrors) => ({
+            ...prevErrors,
+            [id]: null,
+          }));
+        } else {
+          const errorText = await response.text();
+          console.error(
+            `Error calculating token count for box ${id}: ${errorText}`
+          );
+          setTokenCountErrors((prevErrors) => ({
+            ...prevErrors,
+            [id]: "Error calculating token count",
+          }));
+        }
+      } catch (error) {
+        console.error(`Error calculating token count for box ${id}:`, error);
+        setTokenCountErrors((prevErrors) => ({
+          ...prevErrors,
+          [id]: "Network error",
+        }));
+      }
+    }, 500),
+    []
+  );
+
+  const handleTextChange = (id, content) => {
+    const updatedBoxes = textBoxes.map((box) =>
+      box.id === id ? { ...box, content, length: content.length } : box
+    );
+    setTextBoxes(updatedBoxes);
+    debouncedUpdateTokenCount(id, content);
   };
 
   const addTextBox = () => {
@@ -70,13 +103,6 @@ const Compare = () => {
         { id: newId, content: "", length: 0, selected: false },
       ]);
     }
-  };
-
-  const handleTextChange = (id, content) => {
-    const updatedBoxes = textBoxes.map((box) =>
-      box.id === id ? { ...box, content, length: content.length } : box
-    );
-    setTextBoxes(updatedBoxes);
   };
 
   const handleBoxClick = (id) => {
@@ -99,11 +125,52 @@ const Compare = () => {
   };
 
   const updateSimilarityScore = () => {
-    // ... (unchanged)
+    if (selectedBoxes.length === 2) {
+      const [box1, box2] = textBoxes.filter((box) =>
+        selectedBoxes.includes(box.id)
+      );
+      const dmp = new DiffMatchPatch.diff_match_patch();
+      const diffs = dmp.diff_main(box1.content, box2.content);
+      dmp.diff_cleanupSemantic(diffs);
+
+      let matchingChars = 0;
+      let totalChars = 0;
+
+      diffs.forEach(([type, text]) => {
+        if (type === 0) {matchingChars += text.length};
+        totalChars += text.length;
+      });
+
+      const score =
+        totalChars > 0 ? Math.round((matchingChars / totalChars) * 100) : 100;
+      setSimilarityScore(score);
+
+      setHighlightedTexts(highlightDifferences(diffs));
+    } else {
+      setSimilarityScore(0);
+      setHighlightedTexts([]);
+    }
   };
 
   const highlightDifferences = (diffs) => {
-    // ... (unchanged)
+    return diffs.map(([type, text], index) => {
+      switch (type) {
+        case -1:
+          return (
+            <span key={index} className="bg-red-200">
+              {text}
+            </span>
+          );
+        case 1:
+          return (
+            <span key={index} className="bg-green-200">
+              {text}
+            </span>
+          );
+        default:
+          return <span key={index}>{text}</span>;
+      }
+    });
   };
 
   const removeTextBox = (id) => {
@@ -152,7 +219,14 @@ const Compare = () => {
                 <div key={box.id} className="relative">
                   <div className="mb-2 flex justify-between items-center">
                     <span>Length: {box.length}</span>
-                    <span>Tokens: {tokenCounts[box.id] || 0}</span>
+                    <span>
+                      Tokens: {tokenCounts[box.id]}
+                      {tokenCountErrors[box.id] && (
+                        <span className="text-red-500 ml-2">
+                          {tokenCountErrors[box.id]}
+                        </span>
+                      )}
+                    </span>
                     {box.selected && (
                       <span className="text-green-500">Selected</span>
                     )}
@@ -183,7 +257,7 @@ const Compare = () => {
                 <h3 className="text-lg font-semibold mb-2">
                   Differences Highlighted:
                 </h3>
-                <div className="p-4 border rounded bg-gray-50">
+                <div className="p-4 border rounded bg-gray-50 text-black">
                   {highlightedTexts}
                 </div>
               </div>

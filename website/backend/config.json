@@ -7,7 +7,7 @@
             {
                 "model_name": "default",
                 "litellm_params": {
-                    "model": "ajbsdklj",
+                    "model": "your_model",
                     "api_key": "your_api_key",
                     "api_base": "your_api_base"
                 },

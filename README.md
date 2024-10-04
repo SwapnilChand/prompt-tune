@@ -10,40 +10,6 @@ Promptune is an open-source tool designed to enhance interactions with AI langua
 - **Multi-Model Compatibility**: Test prompts with various AI models, including different versions of OpenAI's GPT.
 - **Response Tracking**: Analyze how AI model responses evolve in relation to prompt modifications.
 
-## Installation
-
-Promptune is not available as a pip package, but you can install it from the source. Clone the repository and use the `setup.py` script:
-
-```bash
-git clone https://github.com/Cloud-Code-AI/prompt-tune.git
-cd promptune
-python setup.py install
-```
-
-## Configuration
-
-Before using Promptune, you need to set up a configuration file (`config.json`). This file contains the necessary details for connecting to AI services like OpenAI.
-
-Here's an example of what your `config.json` should look like:
-
-```json
-{
-    "services": {
-        "OpenAI": {
-            "api_key_name": "OPENAI_KEY",
-            "base_url": "https://api.openai.com/v1/chat/completions",
-            "models": ["gpt-3.5-turbo", "gpt-4-turbo"]
-        }
-    }
-}
-```
-
-- `api_key_name`: The environment variable name where your OpenAI API key is stored.
-- `base_url`: The base URL for the OpenAI API.
-- `models`: A list of models you plan to use.
-
-Ensure you have set the `OPENAI_KEY` environment variable with your actual OpenAI API key.
-
 ## Usage
 
 ### Example 1: Generating and Testing Alternative Prompts

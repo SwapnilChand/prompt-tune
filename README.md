@@ -10,10 +10,6 @@ Promptune is an open-source tool designed to enhance interactions with AI langua
 - **Multi-Model Compatibility**: Test prompts with various AI models, including different versions of OpenAI's GPT.
 - **Response Tracking**: Analyze how AI model responses evolve in relation to prompt modifications.
 
-## Contributing
-
-We welcome contributions to Promptune. If you're interested in helping, please read our [CONTRIBUTING.md](./CONTRIBUTING.md) file.
-
 ## License
 
 Promptune is released under the [MIT License](./LICENSE).
